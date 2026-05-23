@@ -1,0 +1,220 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(cuid())
+  telegramId      BigInt   @unique
+  firstName       String
+  lastName        String?
+  username        String?
+  phone           String?
+  phoneSecondary  String?
+  photoUrl        String?
+  role            Role     @default(CUSTOMER)
+  language        String   @default("uz")
+  totalOrders     Int      @default(0)
+  totalSpent      Int      @default(0)
+  bonusPoints     Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  orders          Order[]
+  addresses       Address[]
+  @@index([telegramId])
+}
+
+model Address {
+  id           String  @id @default(cuid())
+  userId       String
+  fullAddress  String
+  latitude     Float?
+  longitude    Float?
+  apartment    String?
+  entrance     String?
+  floor        String?
+  intercom     String?
+  comment      String?
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders       Order[]
+  @@index([userId])
+}
+
+model Category {
+  id       String    @id
+  name     String
+  emoji    String
+  imageUrl String?
+  order    Int
+  isActive Boolean   @default(true)
+  products Product[]
+}
+
+model Product {
+  id             String          @id @default(cuid())
+  categoryId     String
+  name           String
+  description    String
+  price          Int
+  oldPrice       Int?
+  emoji          String
+  imageUrl       String?
+  badge          ProductBadge?
+  preparationTime Int?
+  rating         Float?
+  reviewCount    Int             @default(0)
+  isAvailable    Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  category       Category        @relation(fields: [categoryId], references: [id])
+  variants       ProductVariant[]
+  addons         ProductAddon[]
+  orderItems     OrderItem[]
+  @@index([categoryId])
+}
+
+model ProductVariant {
+  id            String @id @default(cuid())
+  productId     String
+  name          String
+  priceModifier Int
+  product       Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductAddon {
+  id        String @id @default(cuid())
+  productId String
+  name      String
+  emoji     String?
+  price     Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id                     String        @id @default(cuid())
+  orderNumber            String        @unique
+  userId                 String
+  addressId              String?
+  type                   OrderType
+  phone                  String
+  phoneSecondary         String?
+  subtotal               Int
+  deliveryFee            Int
+  discount               Int           @default(0)
+  total                  Int
+  paymentMethod          PaymentMethod
+  paymentStatus          PaymentStatus @default(PENDING)
+  status                 OrderStatus   @default(PENDING)
+  estimatedDeliveryTime  String?
+  courierId              String?
+  courierAssignedAt      DateTime?
+  isBonus                Boolean       @default(false)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  user                   User          @relation(fields: [userId], references: [id])
+  address                Address?      @relation(fields: [addressId], references: [id])
+  courier                Courier?      @relation(fields: [courierId], references: [id])
+  items                  OrderItem[]
+  statusHistory          OrderStatusHistory[]
+  @@index([userId])
+  @@index([courierId])
+  @@index([status])
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  productId   String
+  productName String
+  productEmoji String
+  quantity    Int
+  unitPrice   Int
+  totalPrice  Int
+  variantName String?
+  addonNames  String[]
+  comment     String?
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id])
+  @@index([orderId])
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  status    OrderStatus
+  createdAt DateTime    @default(now())
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  @@index([orderId])
+}
+
+model Courier {
+  id           String   @id @default(cuid())
+  telegramId   BigInt   @unique
+  firstName    String
+  lastName     String?
+  username     String?
+  phone        String
+  photoUrl     String?
+  isActive     Boolean  @default(true)
+  isOnline     Boolean  @default(false)
+  currentLat   Float?
+  currentLng   Float?
+  totalOrders  Int      @default(0)
+  rating       Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orders       Order[]
+  @@index([telegramId])
+  @@index([isActive, isOnline])
+}
+
+enum Role {
+  CUSTOMER
+  COURIER
+  ADMIN
+  MANAGER
+}
+
+enum OrderType {
+  DELIVERY
+  PICKUP
+}
+
+enum PaymentMethod {
+  CASH
+  PAYME
+  CLICK
+  TELEGRAM_PAY
+  CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  ON_THE_WAY
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+enum ProductBadge {
+  HOT
+  NEW
+  TOP
+  DISCOUNT
+  BESTSELLER
+}

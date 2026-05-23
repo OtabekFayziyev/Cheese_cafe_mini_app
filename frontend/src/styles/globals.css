@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand ranglari (default fallback) */
+    --brand-yellow: #ffd000;
+    --brand-red: #e8291c;
+    --brand-dark: #1a0a00;
+    --brand-cream: #fffdf5;
+
+    /* Telegram safe areas (notch va home indicator uchun) */
+    --tg-safe-top: env(safe-area-inset-top, 0px);
+    --tg-safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  html,
+  body {
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  body {
+    @apply bg-brand-cream font-sans text-brand-dark antialiased;
+    /* Telegram WebView'da overscroll zoom oldini olish */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  #root {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* Input default styllarini olib tashlash */
+  input,
+  textarea,
+  button {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+  }
+
+  /* iOS zoom oldini olish (input fokus paytida) */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  /* Scrollbar yashirish (touch device'larda kerak emas) */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  html {
+    scrollbar-width: none;
+  }
+}
+
+@layer utilities {
+  /* Safe area paddinglari */
+  .pt-safe {
+    padding-top: var(--tg-safe-top);
+  }
+  .pb-safe {
+    padding-bottom: var(--tg-safe-bottom);
+  }
+
+  /* Horizontal scroll yashirish */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Glassmorphism (blur effekti) */
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+@layer components {
+  /* Sahifa o'tish animatsiyasi */
+  .page-enter {
+    animation: page-enter 0.3s ease-out;
+  }
+
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
