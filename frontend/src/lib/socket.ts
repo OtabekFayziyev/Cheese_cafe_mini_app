@@ -1,7 +1,10 @@
 import { io, Socket } from 'socket.io-client'
 
-// Backend bir xil portda bo'lgani uchun relative URL
-const SOCKET_URL = window.location.origin
+// Vercel deployment: use Railway backend URL
+// Local development: use same origin
+const SOCKET_URL = import.meta.env.VITE_API_URL 
+  ? import.meta.env.VITE_API_URL.replace('/api', '') // Remove /api suffix
+  : window.location.origin
 
 class SocketClient {
   private socket: Socket | null = null
