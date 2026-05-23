@@ -78,10 +78,12 @@ const start = async () => {
     await app.ready();
     await httpServer.listen({ port: CONFIG.PORT, host: '0.0.0.0' });
     
-    bot.start({ drop_pending_updates: true });
-    
+    bot.start({ drop_pending_updates: true }).catch((err) => {
+      console.error('❌ Bot start error (server continues running):', err.message);
+    });
+
     console.log(`🚀 Server running on http://localhost:${CONFIG.PORT}`);
-    console.log(`🤖 Bot started: @${CONFIG.TELEGRAM_BOT_USERNAME}`);
+    console.log(`🤖 Bot starting: @${CONFIG.TELEGRAM_BOT_USERNAME}`);
   } catch (err) {
     app.log.error(err);
     process.exit(1);
