@@ -5,7 +5,9 @@ import { Server as SocketServer } from 'socket.io';
 export async function courierRoutes(app: FastifyInstance, io: SocketServer) {
   app.get('/courier/orders', { onRequest: [app.authenticate] }, async (request) => {
     const userId = request.user.userId;
-    const courier = await prisma.courier.findFirst({ where: { telegramId: BigInt(userId) } });
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { telegramId: true } });
+    if (!user) throw new Error('User not found');
+    const courier = await prisma.courier.findFirst({ where: { telegramId: user.telegramId } });
     if (!courier) throw new Error('Courier not found');
 
     return prisma.order.findMany({
@@ -21,16 +23,19 @@ export async function courierRoutes(app: FastifyInstance, io: SocketServer) {
   app.post('/courier/location', { onRequest: [app.authenticate] }, async (request) => {
     const userId = request.user.userId;
     const { latitude, longitude } = request.body as { latitude: number; longitude: number };
-    
-    const courier = await prisma.courier.findFirst({ 
-      where: { telegramId: BigInt(userId) },
+
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { telegramId: true } });
+    if (!user) throw new Error('User not found');
+
+    const courier = await prisma.courier.findFirst({
+      where: { telegramId: user.telegramId },
       include: { orders: { where: { status: 'ON_THE_WAY' } } },
     });
 
     if (!courier) throw new Error('Courier not found');
 
     await prisma.courier.updateMany({
-      where: { telegramId: BigInt(userId) },
+      where: { telegramId: user.telegramId },
       data: { currentLat: latitude, currentLng: longitude, isOnline: true },
     });
 

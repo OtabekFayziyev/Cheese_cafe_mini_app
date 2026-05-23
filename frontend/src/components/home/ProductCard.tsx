@@ -27,7 +27,12 @@ export function ProductCard({ product, onClick }: ProductCardProps) {
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation()
     haptic.impact('light')
-    addItem({ productId: product.id })
+    addItem({
+      productId: product.id,
+      productName: product.name,
+      productEmoji: product.emoji,
+      unitPrice: product.price,
+    })
     showToast(`${product.name} savatga qo'shildi`, 'success')
   }
 

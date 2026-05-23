@@ -54,8 +54,13 @@ export interface Product {
 
 export interface CartItem {
   productId: string
+  productName: string
+  productEmoji: string
+  unitPrice: number
   quantity: number
   variantId?: string
+  variantName?: string
   addonIds?: string[]
+  addonNames?: string[]
   comment?: string
 }

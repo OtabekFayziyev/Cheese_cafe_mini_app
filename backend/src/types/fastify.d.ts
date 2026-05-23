@@ -9,4 +9,7 @@ declare module '@fastify/jwt' {
 }
 
 declare module 'fastify' {
-  i
+  interface FastifyInstance {
+    authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+  }
+}

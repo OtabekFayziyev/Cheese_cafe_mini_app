@@ -13,6 +13,7 @@ export type OrderStatus =
   | 'cancelled' // Bekor qilingan
 
 export interface DeliveryAddress {
+  id?: string
   fullAddress: string
   latitude?: number
   longitude?: number

@@ -67,7 +67,7 @@ export function CartPage() {
 
   // Hisob-kitoblar
   const subtotal = useMemo(() => {
-    return cartItems.reduce((sum, item) => sum + item.totalPrice, 0)
+    return cartItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
   }, [cartItems])
 
   const deliveryFee = orderType === 'delivery' && subtotal < FREE_DELIVERY_THRESHOLD ? DELIVERY_FEE : 0
@@ -110,9 +110,10 @@ export function CartPage() {
       }
 
       const order = await createOrder.mutateAsync(orderData)
-      
+
       haptic.notification('success')
       setPhone(phone)
+      clearCart()
 
       navigate('/order-success', {
         state: {
@@ -161,15 +162,7 @@ export function CartPage() {
       {/* Cart items */}
       <div className="mt-4 space-y-2 px-5">
         {cartItems.map((item) => {
-          const product = getProductById(item.productId)
-          if (!product) return null
-
-          const variant = product.variants?.find((v) => v.id === item.variantId)
-          const addons = product.addons?.filter((a) => item.addonIds?.includes(a.id))
-
-          const variantPrice = variant?.priceModifier ?? 0
-          const addonsPrice = (addons ?? []).reduce((s, a) => s + a.price, 0)
-          const itemTotal = (product.price + variantPrice + addonsPrice) * item.quantity
+          const itemTotal = item.unitPrice * item.quantity
 
           return (
             <motion.div
@@ -180,20 +173,20 @@ export function CartPage() {
               <div className="flex gap-3">
                 {/* Emoji */}
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-brand-cream-muted text-3xl">
-                  {product.emoji}
+                  {item.productEmoji}
                 </div>
 
                 {/* Info */}
                 <div className="flex-1">
-                  <h3 className="text-tg-body font-bold">{product.name}</h3>
-                  {variant && (
+                  <h3 className="text-tg-body font-bold">{item.productName}</h3>
+                  {item.variantName && (
                     <p className="mt-0.5 text-xxs text-brand-dark/60">
-                      {variant.name}
+                      {item.variantName}
                     </p>
                   )}
-                  {addons && addons.length > 0 && (
+                  {item.addonNames && item.addonNames.length > 0 && (
                     <p className="mt-0.5 text-xxs text-brand-dark/60">
-                      + {addons.map((a) => a.name).join(', ')}
+                      + {item.addonNames.join(', ')}
                     </p>
                   )}
                   {item.comment && (

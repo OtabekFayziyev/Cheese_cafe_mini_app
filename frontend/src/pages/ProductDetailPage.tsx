@@ -61,12 +61,20 @@ export function ProductDetailPage() {
   // Savatga qo'shish
   const handleAddToCart = () => {
     haptic.notification('success')
-    
+
+    const selectedVariant = product.variants?.find((v) => v.id === selectedVariantId)
+    const selectedAddons = product.addons?.filter((a) => selectedAddonIds.includes(a.id)) ?? []
+
     for (let i = 0; i < quantity; i++) {
       addItem({
         productId: product.id,
+        productName: product.name,
+        productEmoji: product.emoji,
+        unitPrice: product.price + (selectedVariant?.priceModifier ?? 0) + selectedAddons.reduce((s, a) => s + a.price, 0),
         variantId: selectedVariantId,
+        variantName: selectedVariant?.name,
         addonIds: selectedAddonIds.length > 0 ? selectedAddonIds : undefined,
+        addonNames: selectedAddons.length > 0 ? selectedAddons.map((a) => a.name) : undefined,
         comment: comment.trim() || undefined,
       })
     }

@@ -4,6 +4,12 @@ import { prisma } from '../../config/database.js';
 import { redis } from '../../config/redis.js';
 
 export async function adminRoutes(app: FastifyInstance) {
+  app.addHook('preHandler', async (request: any, reply) => {
+    if (request.user?.role !== 'ADMIN' && request.user?.role !== 'MANAGER') {
+      return reply.code(403).send({ error: 'Forbidden' });
+    }
+  });
+
   app.get('/admin/stats', { onRequest: [app.authenticate] }, async () => {
     const [totalOrders, totalRevenue, activeOrders] = await Promise.all([
       prisma.order.count(),

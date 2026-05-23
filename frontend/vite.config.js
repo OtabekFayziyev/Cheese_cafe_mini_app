@@ -10,9 +10,20 @@ export default defineConfig({
         },
     },
     server: {
+        allowedHosts: true,
         host: true,
         port: 5173,
-        // Telegram WebView ichidan ochish uchun HTTPS tunnel kerak bo'lganda ngrok ishlatiladi
+        proxy: {
+            '/api': {
+                target: 'http://localhost:3000',
+                changeOrigin: true,
+            },
+            '/socket.io': {
+                target: 'http://localhost:3000',
+                changeOrigin: true,
+                ws: true,
+            },
+        },
     },
     build: {
         outDir: 'dist',

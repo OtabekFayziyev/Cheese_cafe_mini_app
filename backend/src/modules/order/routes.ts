@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../../config/database.js';
 import { Server as SocketServer } from 'socket.io';
+import { notifyOrderStatus } from '../../bot/index.js';
 
 const createOrderSchema = z.object({
   type: z.enum(['DELIVERY', 'PICKUP']),
@@ -123,7 +124,12 @@ export async function orderRoutes(app: FastifyInstance, io: SocketServer) {
     });
   });
 
-  app.patch('/orders/:id/status', { onRequest: [app.authenticate] }, async (request) => {
+  app.patch('/orders/:id/status', { onRequest: [app.authenticate] }, async (request, reply) => {
+    const { role } = request.user;
+    if (role !== 'ADMIN' && role !== 'MANAGER' && role !== 'COURIER') {
+      return reply.code(403).send({ error: 'Forbidden' });
+    }
+
     const { id } = request.params as { id: string };
     const { status } = request.body as { status: string };
 
@@ -143,6 +149,9 @@ export async function orderRoutes(app: FastifyInstance, io: SocketServer) {
       status,
       updatedAt: new Date().toISOString(),
     });
+
+    // Telegram bot bildirishnomasi
+    await notifyOrderStatus(id, status);
 
     console.log(`📦 Order ${id} status → ${status} (WebSocket emitted)`);
 
