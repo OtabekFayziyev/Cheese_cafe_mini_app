@@ -1,14 +1,12 @@
-import 'fastify';
+import '@fastify/jwt';
 
-declare module 'fastify' {
-  interface FastifyInstance {
-    authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
-  }
-
-  interface FastifyRequest {
-    user: {
-      userId: string;
-      role: string;
-    };
+// @fastify/jwt v8 uchun to'g'ri type augmentation
+declare module '@fastify/jwt' {
+  interface FastifyJWT {
+    payload: { userId: string; role: string };
+    user: { userId: string; role: string };
   }
 }
+
+declare module 'fastify' {
+  i
