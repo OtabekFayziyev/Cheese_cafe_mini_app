@@ -5,6 +5,8 @@ import { prisma } from '../config/database.js';
 export const bot = new Bot(CONFIG.TELEGRAM_BOT_TOKEN);
 
 bot.command('start', async (ctx) => {
+  if (!ctx.from) return;
+  
   const user = await prisma.user.findUnique({ 
     where: { telegramId: BigInt(ctx.from.id) } 
   });
@@ -33,7 +35,7 @@ bot.command('start', async (ctx) => {
 });
 
 bot.on('message:contact', async (ctx) => {
-  if (!ctx.message.contact) return;
+  if (!ctx.message.contact || !ctx.from) return;
   
   const phone = ctx.message.contact.phone_number.replace('+', '');
   
