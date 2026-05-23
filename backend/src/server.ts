@@ -4,7 +4,6 @@ import jwt from '@fastify/jwt';
 import fastifyStatic from '@fastify/static';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createServer } from 'http';
 import { CONFIG } from './config/env.js';
 import { prisma } from './config/database.js';
 import { redis } from './config/redis.js';
@@ -61,12 +60,12 @@ app.decorate('authenticate', async (request: any, reply: any) => {
   }
 });
 
-const httpServer = createServer(app.server);
-const io = setupWebSocket(httpServer);
+const io = setupWebSocket(app.server);
 
 app.addHook('onClose', async () => {
   await prisma.$disconnect();
   await redis.quit();
+  io.close();
   bot.stop();
 });
 
@@ -99,8 +98,7 @@ app.setNotFoundHandler((request, reply) => {
 
 const start = async () => {
   try {
-    await app.ready();
-    await httpServer.listen({ port: CONFIG.PORT, host: '0.0.0.0' });
+    await app.listen({ port: CONFIG.PORT, host: '0.0.0.0' });
     
     bot.start({ drop_pending_updates: true }).catch((err) => {
       console.error('❌ Bot start error (server continues running):', err.message);
