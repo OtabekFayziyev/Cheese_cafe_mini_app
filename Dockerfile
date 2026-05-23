@@ -58,7 +58,7 @@ COPY --from=backend-builder /app/backend/prisma ./prisma
 COPY --from=frontend-builder /app/frontend/dist ./public
 
 # Expose port
-EXPOSE 3000
+EXPOSE 8080
 
 # Start command
 CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
