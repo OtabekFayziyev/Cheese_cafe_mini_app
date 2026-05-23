@@ -21,7 +21,26 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = Fastify({ logger: true });
 
-app.register(cors, { origin: CONFIG.CORS_ORIGIN, credentials: true });
+// ✅ CORS SOZLAMALARI - ENG SODDA VA ISHONCHLI
+const corsOrigins: (string | RegExp)[] = [
+  CONFIG.CORS_ORIGIN || 'http://localhost:5173',
+  'https://t.me',
+  'https://web.telegram.org',
+  /\.vercel\.app$/,
+  /\.railway\.app$/,
+];
+
+if (CONFIG.NODE_ENV === 'development') {
+  corsOrigins.push('http://localhost:5173', 'http://localhost:3000');
+}
+
+app.register(cors, {
+  origin: corsOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+});
+
 app.register(jwt, { secret: CONFIG.JWT_SECRET });
 
 // Serve frontend static files
@@ -51,7 +70,12 @@ app.addHook('onClose', async () => {
   bot.stop();
 });
 
-app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
+// Health check endpoint
+app.get('/health', async () => ({ 
+  status: 'ok', 
+  timestamp: new Date().toISOString(),
+  env: CONFIG.NODE_ENV 
+}));
 
 app.register(authRoutes, { prefix: '/api' });
 app.register(menuRoutes, { prefix: '/api' });
