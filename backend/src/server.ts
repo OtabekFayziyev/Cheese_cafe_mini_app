@@ -4,7 +4,7 @@ import jwt from '@fastify/jwt';
 import fastifyStatic from '@fastify/static';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
+import { createServer } from 'http';
 import { CONFIG } from './config/env.js';
 import { prisma } from './config/database.js';
 import { redis } from './config/redis.js';
@@ -25,7 +25,10 @@ app.register(cors, { origin: CONFIG.CORS_ORIGIN, credentials: true });
 app.register(jwt, { secret: CONFIG.JWT_SECRET });
 
 // Serve frontend static files
-const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+const frontendDistPath = process.env.NODE_ENV === 'production' 
+  ? path.join(__dirname, '../public')
+  : path.join(__dirname, '../../frontend/dist');
+  
 app.register(fastifyStatic, {
   root: frontendDistPath,
   prefix: '/',
@@ -39,7 +42,8 @@ app.decorate('authenticate', async (request: any, reply: any) => {
   }
 });
 
-const io = setupWebSocket(app.server);
+const httpServer = createServer(app.server);
+const io = setupWebSocket(httpServer);
 
 app.addHook('onClose', async () => {
   await prisma.$disconnect();
@@ -71,7 +75,8 @@ app.setNotFoundHandler((request, reply) => {
 
 const start = async () => {
   try {
-    await app.listen({ port: CONFIG.PORT, host: '0.0.0.0' });
+    await app.ready();
+    await httpServer.listen({ port: CONFIG.PORT, host: '0.0.0.0' });
     
     bot.start({ drop_pending_updates: true });
     
