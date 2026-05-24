@@ -13,3 +13,8 @@ export const CACHE_TTL = {
   USER: 600,
   ORDER: 60,
 };
+
+// Bu kod bormi?
+redis.on('error', (err) => {
+  console.warn('⚠️ Redis error (ignoring):', err.message);
+});
