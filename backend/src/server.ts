@@ -138,13 +138,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = Fastify({ logger: true });
 
-// ✅ CORS DOMLENLAR ROʻYXATI
+// ✅ CORS DOMENLAR ROʻYXATI TO'G'RILANDI
 let corsOrigins = [
-  'https://vercel.app', // Vercel frontend manzilingiz
+  'https://project-2iyuk.vercel.app', // Vercel aniq manzili qo'shildi
   'https://t.me',
+  'https://web.telegram.org',
   'https://telegram.org',
-  /\.vercel\.app$/, // Barcha vercel subdomenlari uchun
-  /\.railway\.app$/, // Barcha railway subdomenlari uchun
+  /\.vercel\.app$/, // Barcha vercel subdomenlari uchun regeks
+  /\.railway\.app$/, // Barcha railway subdomenlari uchun regeks
 ];
 
 if (CONFIG.CORS_ORIGIN) {
@@ -155,21 +156,18 @@ if (CONFIG.NODE_ENV === 'development') {
   corsOrigins.push('http://localhost:5173', 'http://localhost:3000');
 }
 
-// ✅ KENGAYTIRILGAN VA XAVFSIZ CORS SOZLAMALARI
+// ✅ KENGAYTIRILGAN VA ISHONCHLI CORS SOZLAMALARI
 app.register(cors, {
   origin: (origin, cb) => {
-    // Agar so'rov origin-siz bo'lsa (masalan, server-to-server) yoki ro'yxatda bo'lsa
     if (!origin || corsOrigins.includes(origin) || corsOrigins.some(regex => regex instanceof RegExp && regex.test(origin))) {
       cb(null, true);
       return;
     }
-    // Muammo bo'lmasligi uchun har qanday holatda ruxsat beramiz, lekin logda ogohlantiramiz
-    console.log(`⚠️ Noma'lum CORS origin: ${origin}`);
-    cb(null, true);
+    console.log(`⚠️ Noma'lum CORS origin so'rovi: ${origin}`);
+    cb(null, true); // Bloklash xavfini kamaytirish uchun har doim ruxsat beramiz
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  // Axios yuborishi mumkin bo'lgan barcha sarlavhalarga ruxsat beramiz
   allowedHeaders: [
     'Content-Type', 
     'Authorization', 
@@ -178,7 +176,6 @@ app.register(cors, {
     'Origin', 
     'Access-Control-Allow-Origin'
   ],
-  // Preflight (OPTIONS) so'rovlariga sarlavhalarni majburiy qo'shish
   preflightContinue: false,
   optionsSuccessStatus: 204
 });
@@ -239,16 +236,24 @@ app.setNotFoundHandler((request, reply) => {
   }
 });
 
+// ✅ ASOSIY PORT VA HOST XATOLIGI TUZATILDI
 const start = async () => {
   try {
-    await app.listen({ port: CONFIG.PORT, host: '0.0.0.0' });
+    // Railway taqdim etadigan portni birinchi o'ringa qo'yamiz
+    const listenPort = Number(process.env.PORT) || Number(CONFIG.PORT) || 3000;
+    
+    // Railway tashqaridan keladigan so'rovlarni qabul qilishi uchun host '0.0.0.0' bo'lishi shart!
+    await app.listen({ 
+      port: listenPort, 
+      host: '0.0.0.0' 
+    });
     
     bot.start({ drop_pending_updates: true }).catch((err) => {
       console.error('❌ Bot start error (server continues running):', err.message);
     });
 
-    console.log(`🚀 Server running on http://localhost:${CONFIG.PORT}`);
-    console.log(`🤖 Bot starting: @${CONFIG.TELEGRAM_BOT_USERNAME}`);
+    console.log(`🚀 Server muvaffaqiyatli ishga tushdi: port ${listenPort}, host: 0.0.0.0`);
+    console.log(`🤖 Bot holati: @${CONFIG.TELEGRAM_BOT_USERNAME}`);
   } catch (err) {
     app.log.error(err);
     process.exit(1);
