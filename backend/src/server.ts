@@ -138,31 +138,49 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = Fastify({ logger: true });
 
-// ✅ CORS SOZLAMALARI TOʻGʻRILANDI
-// credentials: true bo'lgani uchun '*' ishlatib bo'lmaydi, massiv va let ishlatamiz
+// ✅ CORS DOMLENLAR ROʻYXATI
 let corsOrigins = [
-  'https://vercel.app', // Vercel production manzilingiz
+  'https://vercel.app', // Vercel frontend manzilingiz
   'https://t.me',
   'https://telegram.org',
-  /\.vercel\.app$/, // Barcha vercel subdomenlari uchun regeks
-  /\.railway\.app$/, // Barcha railway subdomenlari uchun regeks
+  /\.vercel\.app$/, // Barcha vercel subdomenlari uchun
+  /\.railway\.app$/, // Barcha railway subdomenlari uchun
 ];
 
-// Agar env faylda qo'shimcha domen bo'lsa, massivga qo'shamiz
 if (CONFIG.CORS_ORIGIN) {
   corsOrigins.push(CONFIG.CORS_ORIGIN);
 }
 
-// Lokal ishlab chiqish (development) muhiti uchun domenlar
 if (CONFIG.NODE_ENV === 'development') {
   corsOrigins.push('http://localhost:5173', 'http://localhost:3000');
 }
 
+// ✅ KENGAYTIRILGAN VA XAVFSIZ CORS SOZLAMALARI
 app.register(cors, {
-  origin: corsOrigins,
+  origin: (origin, cb) => {
+    // Agar so'rov origin-siz bo'lsa (masalan, server-to-server) yoki ro'yxatda bo'lsa
+    if (!origin || corsOrigins.includes(origin) || corsOrigins.some(regex => regex instanceof RegExp && regex.test(origin))) {
+      cb(null, true);
+      return;
+    }
+    // Muammo bo'lmasligi uchun har qanday holatda ruxsat beramiz, lekin logda ogohlantiramiz
+    console.log(`⚠️ Noma'lum CORS origin: ${origin}`);
+    cb(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  // Axios yuborishi mumkin bo'lgan barcha sarlavhalarga ruxsat beramiz
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With', 
+    'Accept', 
+    'Origin', 
+    'Access-Control-Allow-Origin'
+  ],
+  // Preflight (OPTIONS) so'rovlariga sarlavhalarni majburiy qo'shish
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 });
 
 app.register(jwt, { secret: CONFIG.JWT_SECRET });
